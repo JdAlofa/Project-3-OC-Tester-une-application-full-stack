@@ -1,3 +1,4 @@
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -9,15 +10,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-
-import { SessionService } from '../../../../services/session.service';
-import { SessionApiService } from '../../services/session-api.service';
-
-import { FormComponent } from './form.component';
 import { of } from 'rxjs';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Session } from '../../interfaces/session.interface';
+import { SessionApiService } from '../../services/session-api.service';
+import { SessionService } from '../../../../services/session.service';
+import { FormComponent } from './form.component';
 
 describe('FormComponent', () => {
   let component: FormComponent;
@@ -37,6 +36,12 @@ describe('FormComponent', () => {
   };
 
   beforeEach(async () => {
+    const sessionApiServiceMock = {
+      create: jest.fn().mockReturnValue(of(mockSession)),
+      update: jest.fn().mockReturnValue(of(mockSession)),
+      detail: jest.fn().mockReturnValue(of(mockSession)),
+    };
+
     await TestBed.configureTestingModule({
       imports: [
         RouterTestingModule.withRoutes([{ path: 'sessions', component: FormComponent }]),
@@ -59,7 +64,17 @@ describe('FormComponent', () => {
             },
           },
         },
-        SessionApiService,
+        { provide: SessionApiService, useValue: sessionApiServiceMock },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: (id: string) => '1',
+              },
+            },
+          },
+        },
       ],
       declarations: [FormComponent],
     }).compileComponents();
@@ -76,7 +91,6 @@ describe('FormComponent', () => {
   });
 
   it('should call create method when form is submitted for creation', () => {
-    const spy = jest.spyOn(sessionApiService, 'create').mockReturnValue(of(mockSession));
     component.onUpdate = false;
     component.sessionForm?.setValue({
       name: 'Test Session',
@@ -85,11 +99,10 @@ describe('FormComponent', () => {
       description: 'Test Description',
     });
     component.submit();
-    expect(spy).toHaveBeenCalled();
+    expect(sessionApiService.create).toHaveBeenCalled();
   });
 
   it('should call update method when form is submitted for update', () => {
-    const spy = jest.spyOn(sessionApiService, 'update').mockReturnValue(of(mockSession));
     component.onUpdate = true;
     component.sessionForm?.setValue({
       name: 'Test Session',
@@ -98,7 +111,7 @@ describe('FormComponent', () => {
       description: 'Test Description',
     });
     component.submit();
-    expect(spy).toHaveBeenCalled();
+    expect(sessionApiService.update).toHaveBeenCalled();
   });
 
   it('should disable submit button when a required field is missing', () => {
@@ -111,5 +124,13 @@ describe('FormComponent', () => {
     fixture.detectChanges();
     const submitButton = fixture.debugElement.query(By.css('button[type="submit"]')).nativeElement;
     expect(submitButton.disabled).toBeTruthy();
+  });
+
+  it('should fetch session details and initialize form for update', () => {
+    jest.spyOn(router, 'url', 'get').mockReturnValue('/update');
+    component.ngOnInit();
+    expect(sessionApiService.detail).toHaveBeenCalledWith('1');
+    expect(component.onUpdate).toBe(true);
+    expect(component.sessionForm).toBeDefined();
   });
 });

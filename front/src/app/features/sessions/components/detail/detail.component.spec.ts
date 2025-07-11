@@ -1,11 +1,12 @@
+
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { RouterTestingModule, } from '@angular/router/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { SessionService } from '../../../../services/session.service';
 
@@ -22,9 +23,6 @@ describe('DetailComponent', () => {
   let component: DetailComponent;
   let fixture: ComponentFixture<DetailComponent>;
   let sessionApiService: SessionApiService;
-  let teacherService: TeacherService;
-  let sessionService: SessionService;
-  let router: Router;
 
   const mockSession: Session = {
     id: 1,
@@ -49,6 +47,8 @@ describe('DetailComponent', () => {
     const sessionApiServiceMock = {
       detail: jest.fn().mockReturnValue(of(mockSession)),
       delete: jest.fn().mockReturnValue(of({})),
+      participate: jest.fn().mockReturnValue(of(undefined)),
+      unParticipate: jest.fn().mockReturnValue(of(undefined)),
     };
 
     const teacherServiceMock = {
@@ -62,7 +62,7 @@ describe('DetailComponent', () => {
         MatSnackBarModule,
         ReactiveFormsModule,
         MatCardModule,
-        MatIconModule
+        MatIconModule,
       ],
       declarations: [DetailComponent],
       providers: [
@@ -81,9 +81,9 @@ describe('DetailComponent', () => {
           useValue: {
             sessionInformation: {
               admin: true,
-              id: 1
-            }
-          }
+              id: 1,
+            },
+          },
         },
         { provide: SessionApiService, useValue: sessionApiServiceMock },
         { provide: TeacherService, useValue: teacherServiceMock },
@@ -93,9 +93,6 @@ describe('DetailComponent', () => {
     fixture = TestBed.createComponent(DetailComponent);
     component = fixture.componentInstance;
     sessionApiService = TestBed.inject(SessionApiService);
-    teacherService = TestBed.inject(TeacherService);
-    sessionService = TestBed.inject(SessionService);
-    router = TestBed.inject(Router);
     fixture.detectChanges();
   });
 
@@ -104,10 +101,6 @@ describe('DetailComponent', () => {
   });
 
   it('should display session information', () => {
-    component.session = mockSession;
-    component.teacher = mockTeacher;
-    fixture.detectChanges();
-
     const title = fixture.debugElement.query(By.css('h1')).nativeElement;
     const teacherName = fixture.debugElement.query(By.css('mat-card-subtitle span')).nativeElement;
     const attendees = fixture.debugElement.query(By.css('div.my2 span')).nativeElement;
@@ -120,21 +113,40 @@ describe('DetailComponent', () => {
   });
 
   it('should show delete button if user is admin', () => {
-    component.isAdmin = true;
-    fixture.detectChanges();
-
     const deleteButton = fixture.debugElement.query(By.css('button[color="warn"]'));
     expect(deleteButton).toBeTruthy();
   });
 
   it('should call delete method when delete button is clicked', () => {
-    const spy = jest.spyOn(sessionApiService, 'delete').mockReturnValue(of({}));
-    component.isAdmin = true;
-    fixture.detectChanges();
-
+    const spy = jest.spyOn(sessionApiService, 'delete');
     const deleteButton = fixture.debugElement.query(By.css('button[color="warn"]')).nativeElement;
     deleteButton.click();
-
     expect(spy).toHaveBeenCalledWith('1');
+  });
+
+  it('should call participate method when participate button is clicked', () => {
+    component.isAdmin = false;
+    fixture.detectChanges();
+    const spy = jest.spyOn(sessionApiService, 'participate');
+    const participateButton = fixture.debugElement.query(By.css('button[color="primary"]')).nativeElement;
+    participateButton.click();
+    expect(spy).toHaveBeenCalledWith('1', '1');
+  });
+
+  it('should call unParticipate method when unParticipate button is clicked', () => {
+    component.isAdmin = false;
+    component.isParticipate = true;
+    fixture.detectChanges();
+    const spy = jest.spyOn(sessionApiService, 'unParticipate');
+    const unParticipateButton = fixture.debugElement.query(By.css('button[color="warn"]')).nativeElement;
+    unParticipateButton.click();
+    expect(spy).toHaveBeenCalledWith('1', '1');
+  });
+
+  it('should call window.history.back when back button is clicked', () => {
+    const spy = jest.spyOn(window.history, 'back');
+    const backButton = fixture.debugElement.query(By.css('button[mat-icon-button]')).nativeElement;
+    backButton.click();
+    expect(spy).toHaveBeenCalled();
   });
 });

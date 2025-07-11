@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +11,7 @@ import { of, throwError } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
 import { RegisterComponent } from './register.component';
+import { By } from '@angular/platform-browser';
 
 describe('RegisterComponent', () => {
   let component: RegisterComponent;
@@ -35,7 +36,7 @@ describe('RegisterComponent', () => {
       declarations: [RegisterComponent],
       imports: [
         BrowserAnimationsModule,
-        HttpClientModule,
+        HttpClientTestingModule,
         ReactiveFormsModule,
         MatCardModule,
         MatFormFieldModule,
@@ -110,6 +111,14 @@ describe('RegisterComponent', () => {
       expect(authService.register).toHaveBeenCalledWith(component.form.value);
       expect(router.navigate).not.toHaveBeenCalled();
       expect(component.onError).toBeTruthy();
+    });
+
+    it('should display error message when onError is true', () => {
+      component.onError = true;
+      fixture.detectChanges();
+
+      const errorMessage = fixture.debugElement.query(By.css('.error')).nativeElement;
+      expect(errorMessage.textContent).toContain('An error occurred');
     });
   });
 });
