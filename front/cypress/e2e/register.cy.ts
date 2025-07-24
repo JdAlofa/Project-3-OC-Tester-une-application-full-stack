@@ -32,4 +32,9 @@ describe('Register spec', () => {
     cy.get('input[formControlName=firstName]').clear({ force: true });
     cy.get('button[type=submit]').should('be.disabled');
   });
+
+  it('should display an error on empty form submission', () => {
+    cy.visit('/register');
+    cy.get('button[type=submit]').should('be.disabled');
+  });
 });

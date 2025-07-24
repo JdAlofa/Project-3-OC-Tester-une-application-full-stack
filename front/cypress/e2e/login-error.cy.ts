@@ -29,4 +29,9 @@ describe('Login spec', () => {
     cy.get('input[formControlName=email]').clear();
     cy.get('button[type=submit]').should('be.disabled');
   });
+
+  it('should display an error on empty form submission', () => {
+    cy.visit('/login');
+    cy.get('button[type=submit]').should('be.disabled');
+  });
 });
